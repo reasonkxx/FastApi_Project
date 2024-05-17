@@ -7,8 +7,7 @@ Base = declarative_base()
 
 class Train(Base):
     __tablename__ = 'trains'
-    
-    TrainID = Column(Integer, primary_key=True, index=True)
+    TrainID = Column(Integer, primary_key=True)  # SQLAlchemy автоматически обрабатывает автоинкремент
     TrainName = Column(String(100), nullable=False)
     TrainType = Column(String(50), nullable=False)
 

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Management</title>
+    <script>
+        function submitReadForm() {
+            var trainId = document.getElementById('read_train_id').value;
+            if (trainId) {
+                var form = document.getElementById('readForm');
+                form.action = '/trains/' + trainId;
+                form.submit();
+            } else {
+                alert('Please enter a train ID.');
+            }
+            return false;
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Train Management</h1>
+
+    <!-- Форма для создания поезда -->
+    <h2>Create Train</h2>
+    <form action="/trains/" method="post">
+        <input type="text" name="TrainName" placeholder="Train Name" required>
+        <input type="text" name="TrainType" placeholder="Train Type" required>
+        <button type="submit">Create Train</button>
+    </form>
+
+    <!-- Форма для чтения данных о поезде -->
+    <h2>Read Train</h2>
+    <form id="readForm" onsubmit="return submitReadForm();">
+        <input type="number" id="read_train_id" name="train_id" placeholder="Train ID" required>
+        <button type="submit">Get Train</button>
+    </form>
+
+    <!-- Форма для обновления данных о поезде -->
+    <h2>Update Train</h2>
+    <form action="/trains/update" method="post">
+        <input type="number" name="TrainID" placeholder="Train ID" required>
+        <input type="text" name="TrainName" placeholder="New Train Name">
+        <input type="text" name="TrainType" placeholder="New Train Type">
+        <button type="submit">Update Train</button>
+    </form>
+
+
+    <!-- Форма для удаления поезда -->
+    <h2>Delete Train</h2>
+    <form action="/trains/delete" method="post">
+        <input type="number" name="TrainID" placeholder="Train ID" required>
+        <button type="submit">Delete Train</button>
+    </form>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Form
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.templating import Jinja2Templates
@@ -54,7 +54,11 @@ def shutdown():
 async def read_root():
     return {"Hello": "World"}
 
-# templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/train-management", response_class=HTMLResponse)
+async def train_management(request: Request):
+    return templates.TemplateResponse("train_crud.html", {"request": request})
 
 # @app.get("/items/{id}", response_class=HTMLResponse)
 # async def read_item(request: Request, id: int):
@@ -63,10 +67,10 @@ async def read_root():
 #     # Рендеринг HTML-шаблону з контекстом
 #     return templates.TemplateResponse("item.html", context)
 
-
 # @app.get("/home")
 # async def get_home(request: Request):
 #     return templates.TemplateResponse("home.html", {"request": request})
+
 
 
 # Pydantic модель для вхідних даних Train
@@ -74,21 +78,23 @@ class TrainCreate(BaseModel):
     TrainName: str
     TrainType: str
 
-# Pydantic модель для оновлення даних Train
+# Pydantic модель для входных данных Train
 class TrainUpdate(BaseModel):
-    TrainName: str
-    TrainType: str
+    train_id: int
+    train_name: str
+    train_type: str
 
 # CRUD-операції
 
 # Create
 @app.post("/trains/")
-async def create_train(train_create: TrainCreate, db: Session = Depends(get_db)):
-    new_train = Train(TrainName=train_create.TrainName, TrainType=train_create.TrainType)
+async def create_train(TrainName: str = Form(...), TrainType: str = Form(...), db: Session = Depends(get_db)):
+    print(f"Received: TrainName={TrainName}, TrainType={TrainType}")  
+    new_train = Train(TrainName=TrainName, TrainType=TrainType)
     db.add(new_train)
     db.commit()
     db.refresh(new_train)
-    return new_train
+    return {"success": True, "created_train": new_train}
 
 # Read
 @app.get("/trains/{train_id}")
@@ -99,25 +105,35 @@ async def read_train(train_id: int, db: Session = Depends(get_db)):
     return train
 
 # Update
-@app.put("/trains/{train_id}")
-async def update_train(train_id: int, train_update: TrainUpdate, db: Session = Depends(get_db)):
+@app.post("/trains/update", response_class=HTMLResponse)
+async def update_train(
+    train_id: int = Form(...),
+    train_name: str = Form(None),
+    train_type: str = Form(None),
+    db: Session = Depends(get_db)
+):
     train = db.query(Train).filter(Train.TrainID == train_id).first()
     if train is None:
         raise HTTPException(status_code=404, detail="Train not found")
-    train.TrainName = train_update.TrainName
-    train.TrainType = train_update.TrainType
+    
+    if train_name:
+        train.TrainName = train_name
+    if train_type:
+        train.TrainType = train_type
+    
     db.commit()
-    return train
+    message = f"Train successfully updated: {train.TrainName} ({train.TrainType})"
+    return templates.TemplateResponse("message.html", {"request": request, "message": message})
 
 # Delete
-@app.delete("/trains/{train_id}")
-async def delete_train(train_id: int, db: Session = Depends(get_db)):
-    train = db.query(Train).filter(Train.TrainID == train_id).first()
+@app.post("/trains/delete", response_model=dict)
+async def delete_train(TrainID: int = Form(...), db: Session = Depends(get_db)):
+    train = db.query(Train).filter(Train.TrainID == TrainID).first()
     if train is None:
         raise HTTPException(status_code=404, detail="Train not found")
     db.delete(train)
     db.commit()
-    return {"ok": True}
+    return {"success": True, "message": "Train deleted successfully"}
 
 
 if __name__ == "__main__":
